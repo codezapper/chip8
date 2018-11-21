@@ -3,6 +3,7 @@
 
 #import curses
 #from curses import wrapper
+from random import randint
 import time
 
 def check_60hz(start_time, v_delay, v_sound):
@@ -83,11 +84,82 @@ def gosub(x, y, z, b):
     stack.append(PC)
     pc = x + b
 
+def setI(x, y, z, b):
+    global registers
+
+    registers['I'] = x + b
+
+def jump_to_location(x, y, z, b):
+    global PC
+
+    PC = x + b
+
+def jump_to_location_v0(x, y, z, b):
+    global PC, registers
+
+    PC = x + b + registers[0]
+
+def clear_or_return(x, y, z, b):
+    global PC, SP, stack
+
+    if (b == 0xE0):
+        #Clear the display
+        pass
+
+    if (b == 0xEE):
+        PC = stack[SP]
+        SP -= 1
+
+def skip_if_equal(x, y, z, b):
+    global registers, PC
+
+    if (registers[x] == b):
+        PC += 2
+
+def skip_if_not_equal(x, y, z, b):
+    global registers, PC
+
+    if (registers[x] != b):
+        PC += 2
+
+def skip_if_register(x, y, z, b):
+    global registers, PC
+
+    if (registers[x] == registers[y]):
+        PC += 2
+
+def add_to_register(x, y, z, b):
+    global registers
+
+    registers[x] += b
+
+def skip_if_not_register(x, y, z, b):
+    global registers, PC
+
+    if (registers[x] == registers[y]):
+        PC += 2
+
+def set_register_to_random(x, y, z, b):
+    global registers
+
+    registers[x] = randint(0, 255) & b
+
 operations = {
+    '0x00': clear_or_return,
+    '0x10': jump_to_location,
     '0x20': gosub,
+    '0x30': skip_if_equal,
+    '0x40': skip_if_not_equal,
+    '0x50': skip_if_register,
     '0x60': set_register_to_value,
+    '0x70': add_to_register,
     '0x80': set_register_to_register,
-    '0xe0': skip_if_key
+    '0x90': skip_if_not_register,
+    '0xe0': skip_if_key,
+    '0xa0': setI,
+    '0xb0': jump_to_location_v0,
+    '0xc0': set_register_to_random,
+    '0xd0': jump_to_location_v0
 }
 
 
@@ -100,6 +172,8 @@ def main(stdscr):
     for v_index in range(0, 16):
         registers[v_index] = 0
         keyboard[v_index] = 0
+
+    registers['I'] = 0
 
     v_delay = 0
     v_sound = 0
@@ -117,7 +191,7 @@ def main(stdscr):
         y = (file_memory[PC + 1] & 0xF0) >> 4
         z = file_memory[PC + 1] & 0x0F
         b = file_memory[PC + 1]
-        print(op)
+        print(op, x, y, z, '{:02x}'.format(b))
         if (op in operations):
             operations[op](x, y, z, b)
         PC += 2
