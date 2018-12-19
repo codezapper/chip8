@@ -41,7 +41,14 @@ class Display:
     def set_pixel(self, x, y, c):
         x = x % MAX_X_COORDINATE
         y = y % MAX_Y_COORDINATE
-        self.video_memory[y][x] = c
+        if (self.video_memory[y][x] == '#') and (c == '#'):
+            self.video_memory[y][x] = ' '
+            self.display.addstr(y, x, self.video_memory[y][x])
+        else:
+            self.video_memory[y][x] = c
+            self.display.addstr(y, x, self.video_memory[y][x])
+            return True
+        return False
 
     def clear(self):
         self.video_memory = [([' '] * MAX_X_COORDINATE) for i in range(MAX_Y_COORDINATE)]
@@ -55,21 +62,25 @@ class Display:
 
     def set_lines(self, lines, start_x, start_y):
         y = start_y
+        cleared_pixel = False
         for line in lines:
             x = start_x
             for b in line:
-                self.set_pixel(x, y, b)
+                if (self.set_pixel(x, y, b)):
+                    cleared_pixel = True
                 x += 1
             y += 1
-        self.refresh()
+        # self.refresh()
+        self.display.refresh()
+        return cleared_pixel
 
     def draw_font(self, start_x, start_y, c):
         lines = self.get_lines_representation(fonts.fonts()[c])
-        self.set_lines(lines, start_x, start_y)
+        return self.set_lines(lines, start_x, start_y)
 
     def draw_from_memory(self, start_x, start_y, main_memory, start_index, end_index):
         lines = self.get_lines_representation(main_memory[start_index:end_index])
-        self.set_lines(lines, start_x, start_y)
+        return self.set_lines(lines, start_x, start_y)
 
     def getch(self):
         return self.display.getch()

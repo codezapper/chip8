@@ -18,7 +18,8 @@ def check_60hz():
 
 def display_n_at_x_y(codes):
     #OPCODE 'd'
-    display.draw_from_memory(cpu_reg.V[codes.x], cpu_reg.V[codes.y], main_memory, cpu_reg.I, cpu_reg.I + codes.n)
+    if (not display.draw_from_memory(cpu_reg.V[codes.x], cpu_reg.V[codes.y], main_memory, cpu_reg.I, cpu_reg.I + codes.n)):
+        cpu_reg[0xF] = 0
     cpu_reg.PC += 2
 
 def set_register_to_value(codes):
