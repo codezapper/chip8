@@ -15,9 +15,11 @@ class Display:
         curses.noecho()
         curses.cbreak()
         self.display.keypad(True)
+        self.display.nodelay(True)
         self.clear()
 
     def restore_display(self):
+        self.display.nodelay(False)
         curses.nocbreak()
         self.display.keypad(False)
         curses.echo()
@@ -82,5 +84,14 @@ class Display:
         lines = self.get_lines_representation(main_memory[start_index:end_index])
         return self.set_lines(lines, start_x, start_y)
 
-    def getch(self):
-        return self.display.getch()
+    def getch(self, must_wait = True):
+        c = ''
+        if (must_wait):
+            while (c == ''):
+                try:
+                    c = self.display.getch()
+                except:
+                    c = ''
+            return c
+        else:
+            return self.display.getch()

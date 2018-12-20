@@ -10,11 +10,16 @@ import os
 import time
 from random import randint
 
+def convert_key_to_keypad(ascii_value):
+    if (ascii_value >= 48) and (ascii_value <= 57):
+        return ascii_value - 48
+    elif (ascii_value >= 97) and (ascii_value <= 102):
+        return ascii_value - 87
 
 def check_60hz():
     cpu_reg.T = max(cpu_reg.T - 1, 0)
     cpu_reg.S = max(cpu_reg.S - 1, 0)
-    threading.Timer(0.17, check_60hz).start()
+    threading.Timer(1/60, check_60hz).start()
 
 def display_n_at_x_y(codes):
     #OPCODE 'd'
@@ -164,11 +169,7 @@ def set_timer_or_load(codes):
         cpu_reg.S = cpu_reg.V[codes.x]
 
     if (codes.kk == 0x0A):
-        c = display.getch()
-        if (c >= 48) and (c <= 57):
-            cpu_reg.V[codes.x] = c - 48
-        elif (c >= 97) and (c <= 102):
-            cpu_reg.V[codes.x] = c - 51
+        cpu_reg.V[codes.x] = convert_key_to_keypad(display.getch())
 
     if (codes.kk == 0x1E):
         cpu_reg.I += cpu_reg.V[codes.x]
@@ -195,21 +196,35 @@ def set_timer_or_load(codes):
             cpu_reg.V[i] = main_memory[cpu_reg.I + i]
         # cpu_reg.I += codes.x + 1
 
+def skip_if_key(codes):
+    #OPCODE 'e'
+    cpu_reg.PC += 2
+    c = convert_key_to_keypad(display.getch(False))
+    if (codes.kk == 0x9E):
+        if (c == cpu_reg.V[codes.x]):
+            cpu_reg.PC += 2
+
+    if (codes.kk == 0xA1):
+        if (c != cpu_reg.V[codes.x]):
+            cpu_reg.PC += 2
+
 display = display.Display()
 main_memory = memory.Memory()
 cpu_reg = registers.Registers()
 
 if (len(sys.argv) < 2):
-    print('Usage: ' + sys.argv[0] + ' rom_file')
+    print('Usage: ' + sys.argv[0] + ' <rom_file>')
     sys.exit(1)
+
+rom_file = sys.argv[1]
 
 try:
-    end = cpu_reg.PC + os.path.getsize(sys.argv[1])
+    end = cpu_reg.PC + os.path.getsize(rom_file)
 except FileNotFoundError:
-    print('File ' + sys.argv[1] + ' not found')
+    print('File ' + rom_file + ' not found')
     sys.exit(1)
 
-with open(sys.argv[1], "rb") as rom:
+with open(rom_file, "rb") as rom:
     main_memory[cpu_reg.PC:end] = rom.read()
 
 operations = {
@@ -227,7 +242,7 @@ operations = {
     'b': jump_to_location_v0,
     'c': set_register_to_random,
     'd': display_n_at_x_y,
-    # 'e': skip_if_key,
+    'e': skip_if_key,
     'f': set_timer_or_load
 }
 
@@ -240,5 +255,6 @@ while (running):
         codes = instructions.Instruction([main_memory[cpu_reg.PC], main_memory[cpu_reg.PC + 1]])
         if (codes.op in operations):
             operations[codes.op](codes)
-        # else:
-        #     print('***** OP NOT FOUND: ' + str(codes.op))
+        else:
+            print('***** OP NOT FOUND: ' + str(codes.op))
+    # time.sleep(0.01)
