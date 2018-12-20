@@ -85,13 +85,10 @@ class Display:
         return self.set_lines(lines, start_x, start_y)
 
     def getch(self, must_wait = True):
-        c = ''
+        c = -1
         if (must_wait):
-            while (c == ''):
-                try:
-                    c = self.display.getch()
-                except:
-                    c = ''
+            while (c == -1):
+                c = self.display.getch()
             return c
         else:
             return self.display.getch()
