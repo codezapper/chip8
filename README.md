@@ -15,4 +15,3 @@ Input is 1 to 1, meaning that keypad keys 0 to 9 are emulated as keys 0 to 9 and
 
 No sound yet.
 
-![Space Invaders Screenshot](/space_invaders.png?raw=true "Space Invaders")
